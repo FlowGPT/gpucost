@@ -18,7 +18,7 @@ spec:
         #runtimeClassName: nvidia
         containers:
         - name: vllm-container
-          image: vllm/vllm-openai:v0.10.1
+          image: vllm/vllm-openai:v0.10.2
           args:
            - "--model"
            - "$modelname"
