@@ -1,0 +1,121 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: model-test-$identifier
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: model-test-$identifier
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: model-test-$identifier
+    spec:
+            #nodeSelector:
+            #node.kubernetes.io/gpu: a100
+        #runtimeClassName: nvidia
+        containers:
+        - name: vllm-container
+          image: vllm/vllm-openai:v0.10.1
+          args:
+           - "--model"
+           - "$modelname"
+           - "--host"
+           - "0.0.0.0"
+           - "--port"
+           - "8080"
+           - "--dtype"
+           - "auto"
+           - '--root-path'
+           - /api
+           - "--max-model-len"
+           - "8192"
+           - "--enable-chunked-prefill"
+           - "--disable-log-requests"
+           - "--enable-prefix-caching"
+           - "--max-num-seqs"
+           - "72"
+           - "--max-num-batched-tokens"
+           - "1024"
+           - "--quantization"
+           - "fp8"
+           - "--kv-cache-dtype"
+           - "fp8"
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health
+              port: 8080
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 600
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          resources:
+            limits:
+              nvidia.com/gpu: 1
+          volumeMounts:
+            - name: shm
+              mountPath: /dev/shm
+        volumes:
+         - name: shm
+           emptyDir:
+             medium: Memory
+             sizeLimit: "2Gi"
+        tolerations:
+          - effect: NoSchedule
+            key: nvidia.com/gpu
+            operator: Exists
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: model-test-$identifier
+  namespace: default
+spec:
+  selector:
+    app: model-test-$identifier
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    external-dns: enabled
+  name: model-test-$identifier
+  namespace: default
+spec:
+  ingressClassName: kong
+  rules:
+    - host: model-test-$identifier.flow.chat
+      http:
+        paths:
+          - backend:
+              service:
+                name: model-test-$identifier
+                port:
+                  number: 8080
+            path: /
+            pathType: Prefix
+
