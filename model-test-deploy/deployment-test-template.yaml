@@ -79,6 +79,15 @@ spec:
           - effect: NoSchedule
             key: nvidia.com/gpu
             operator: Exists
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                  - key: doks.digitalocean.com/gpu-model
+                    operator: In
+                    values:
+                      - $device
 
 ---
 

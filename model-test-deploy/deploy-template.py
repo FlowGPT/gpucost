@@ -5,6 +5,7 @@ import subprocess
 parser = argparse.ArgumentParser()
 parser.add_argument("--id")
 parser.add_argument("--model")
+parser.add_argument("--device")
 parser.add_argument("--list", action="store_true",help="list all deployment which startswith 'model-test'")
 # 新增用于调整副本的参数
 parser.add_argument(
@@ -61,7 +62,7 @@ def scale_deployment(deployment_name: str, replicas: int) -> bool:
     print(f"Scaled deployment '{deployment_name}' to {replicas} replicas.")
     return True
 
-def deploy_model(model_name: str, model_id: str) -> int:
+def deploy_model(model_name: str, model_id: str, dev: str) -> int:
     """
     使用给定的模型名称和 ID 部署模型。
     """
@@ -70,7 +71,8 @@ def deploy_model(model_name: str, model_id: str) -> int:
 
     temp_yaml=template.substitute(
         identifier=model_id,
-        modelname=model_name
+        modelname=model_name,
+        device=dev
     )
 
     temp_path = "./temp-deployment.yaml"
@@ -100,10 +102,10 @@ def main():
         ok = scale_deployment(args.scale_name, args.replicas)
         raise SystemExit(0 if ok else 1)
 
-    if not args.id or not args.model:
-        raise ValueError('absent id or model')
+    if not args.id or not args.model or not args.device:
+        raise ValueError('absent id or model or device')
 
-    deploy_model(args.model, args.id)
+    deploy_model(args.model, args.id, args.device)
 
 
 if __name__ == "__main__":
