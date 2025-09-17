@@ -42,10 +42,6 @@ def list_model_test_deployments() -> list[str]:
     return filtered
 
 def scale_deployment(deployment_name: str, replicas: int) -> bool:
-    """
-    将指定名称的 deployment 的 replicas 设置为 replicas.
-    返回 True 表示成功，False 表示失败。
-    """
     if replicas < 0:
         print("replicas must be >= 0")
         return False
