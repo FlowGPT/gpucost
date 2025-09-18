@@ -84,7 +84,7 @@ spec:
             requiredDuringSchedulingIgnoredDuringExecution:
               nodeSelectorTerms:
                 - matchExpressions:
-                  - key: doks.digitalocean.com/node-pool
+                  - key: gpu-model
                     operator: In
                     values:
                       - $device
