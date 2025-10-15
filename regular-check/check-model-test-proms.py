@@ -8,6 +8,8 @@ cluster_metas=[
     {"context": "do-tor1", "vendor": "digitalocean-tor1"},
     ]
 
+exclude_lists=["model-test-kaon-c-mistral-v0-0"]
+
 def get_deployments_starting_with(prefix, context):
     try:
         # 命令：获取默认命名空间下的所有Deployments，输出为JSON
@@ -137,11 +139,16 @@ if __name__ == "__main__":
         deployments = get_deployments_starting_with("model-test", context)
         print(f"Deployments in context {context} starting with 'model-test': {deployments}")
         
+        for one in exclude_lists:
+            if one in stats:
+                print(f"Excluding deployment {one}")
+                deployments.remove(one)
+
         for one in stats:
             if stats[one]==0:
                 print(f"Warning: Deployment {one} don't have any requests in the last hour")
                 if one not in deployments:
-                    raise ValueError(f"Deployment {one} not found in the cluster {context}")
+                    print(f"Warning: Deployment {one} not found in the cluster {context}")
                 succeed=scale_deployment(one, 0, context)
                 if not succeed:
                     raise ValueError(f"Failed to scale down deployment {one} in the cluster {context}")
