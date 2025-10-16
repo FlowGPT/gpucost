@@ -149,6 +149,7 @@ if __name__ == "__main__":
                 print(f"Warning: Deployment {one} don't have any requests in the last hour")
                 if one not in deployments:
                     print(f"Warning: Deployment {one} not found in the cluster {context}")
+                    continue
                 succeed=scale_deployment(one, 0, context)
                 if not succeed:
                     raise ValueError(f"Failed to scale down deployment {one} in the cluster {context}")
