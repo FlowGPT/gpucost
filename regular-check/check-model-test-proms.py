@@ -147,7 +147,7 @@ if __name__ == "__main__":
 
         for d in deployments:
             for p in stats:
-                if d in p:
+                if stats[p]==0 and d in p:
                     print(f"Warning: Deployment {d} don't have any requests in the last hour")
                     succeed=scale_deployment(d, 0, context)
                     if not succeed:
