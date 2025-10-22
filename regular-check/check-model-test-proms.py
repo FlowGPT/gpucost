@@ -85,12 +85,10 @@ def before_second_last_hyphen(pod_name: str) -> str:
     # 找到所有 '-' 的位置
     hyphen_indices = [i for i, ch in enumerate(pod_name) if ch == '-']
 
-    # 如果 '-' 少于 2 个，返回原字符串
     if len(hyphen_indices) < 2:
         raise ValueError("Input string must contain at least two hyphens ('-')")
 
-    # 倒数第二个 '-' 的索引
-    second_last_idx = hyphen_indices[-2]
+    second_last_idx = hyphen_indices[-1]
 
     # 返回该位置之前的子字符串（不包含 '-')
     return pod_name[:second_last_idx]
@@ -125,7 +123,9 @@ if __name__ == "__main__":
         # Execute the query
         print(f"Querying Prometheus: {query}")
         results = query_prometheus(PROMETHEUS_URL, query)
+        print()
         print(results)
+        print()
         stats=defaultdict(float)
         for item in results:
             pod_name = item['metric']['pod']
@@ -135,22 +135,23 @@ if __name__ == "__main__":
             item_value = float(item['value'][1])
             stats[modified_name] += item_value
         print(stats)
+        print()
 
         deployments = get_deployments_starting_with("model-test", context)
-        print(f"Deployments in context {context} starting with 'model-test': {deployments}")
+        print(f"Deployments in context {context} starting with 'model-test\n': {deployments}")
         
         for one in exclude_lists:
             if one in stats:
                 print(f"Excluding deployment {one}")
                 deployments.remove(one)
 
-        for one in stats:
-            if stats[one]==0:
-                print(f"Warning: Deployment {one} don't have any requests in the last hour")
-                if one not in deployments:
-                    print(f"Warning: Deployment {one} not found in the cluster {context}")
-                    continue
-                succeed=scale_deployment(one, 0, context)
-                if not succeed:
-                    raise ValueError(f"Failed to scale down deployment {one} in the cluster {context}")
+        for d in deployments:
+            for p in stats:
+                if d in p:
+                    print(f"Warning: Deployment {d} don't have any requests in the last hour")
+                    succeed=scale_deployment(d, 0, context)
+                    if not succeed:
+                        raise ValueError(f"Failed to scale down deployment {d} in the cluster {context}")
+                    break
+
         print("--------------------------------------------------")
