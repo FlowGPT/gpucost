@@ -8,7 +8,7 @@ cluster_metas=[
     {"context": "do-tor1", "vendor": "digitalocean-tor1"},
     ]
 
-exclude_lists=["model-test-kaon-c-mistral-v0-0"]
+exclude_lists=["model-test-qwen3-embedding"]
 
 def get_deployments_starting_with(prefix, context):
     try:
@@ -141,9 +141,8 @@ if __name__ == "__main__":
         print(f"Deployments in context {context} starting with 'model-test\n': {deployments}")
         
         for one in exclude_lists:
-            if one in stats:
-                print(f"Excluding deployment {one}")
-                deployments.remove(one)
+            print(f"Excluding deployment {one}")
+            deployments.remove(one)
 
         for d in deployments:
             for p in stats:
