@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    external-dns.alpha.kubernetes.io/target: k8s.hb1.flow.chat
+    field.cattle.io/publicEndpoints: '[{"addresses":["10.10.37.12","10.10.37.13","10.10.37.14","10.10.37.15","10.10.38.10","10.10.38.11"],"port":80,"protocol":"HTTP","serviceName":"default:model-test-12b-new","ingressName":"default:eris-violet-12b-hb2","hostname":"eris-violet-12b-hb2.flow.chat","path":"/","allNodes":false}]'
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"external-dns.alpha.kubernetes.io/target":"k8s.hb1.flow.chat"},"labels":{"external-dns":"enabled"},"name":"testgpu","namespace":"default"},"spec":{"ingressClassName":"nginx","rules":[{"host":"testgpu-hb1.flow.chat","http":{"paths":[{"backend":{"service":{"name":"testgpu","port":{"number":8000}}},"path":"/","pathType":"Prefix"}]}}]}}
+  creationTimestamp: "2025-08-11T14:27:52Z"
+  generation: 3
+  labels:
+    external-dns: enabled
+  name: eris-violet-12b-hb2
+  namespace: default
+  resourceVersion: "39569624"
+  uid: feb7b253-eba1-4276-a593-deaa6e437c22
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: eris-violet-12b-hb2.flow.chat
+    http:
+      paths:
+      - backend:
+          service:
+            name: model-test-12b-new
+            port:
+              number: 8080
+        path: /
+        pathType: Prefix

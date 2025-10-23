@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/use-regex: 'true'
+    external-dns.alpha.kubernetes.io/target: k8s.hb1.flow.chat
+    field.cattle.io/publicEndpoints: '[{"addresses":["10.10.37.12","10.10.37.13","10.10.37.14","10.10.37.15","10.10.38.10","10.10.38.11"],"port":80,"protocol":"HTTP","serviceName":"default:vllm-12b-router-service","ingressName":"default:eris-12b-prod-hb","hostname":"eris-12b-prod-hb2.flow.chat","path":"/","allNodes":false}]'
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"external-dns.alpha.kubernetes.io/target":"k8s.hb1.flow.chat"},"labels":{"external-dns":"enabled"},"name":"testgpu","namespace":"default"},"spec":{"ingressClassName":"nginx","rules":[{"host":"testgpu-hb1.flow.chat","http":{"paths":[{"backend":{"service":{"name":"testgpu","port":{"number":8000}}},"path":"/","pathType":"Prefix"}]}}]}}
+  creationTimestamp: "2025-10-23T04:23:30Z"
+  generation: 1
+  labels:
+    external-dns: enabled
+  name: eris-12b-prod-hb
+  namespace: default
+  resourceVersion: "39566802"
+  uid: aaa9c805-b762-4248-9379-4eec7fea9023
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: eris-12b-prod-hb2.flow.chat
+    http:
+      paths:
+      - backend:
+          service:
+            name: vllm-12b-router-service
+            port:
+              number: 80
+        path: /api/(.*)
+        pathType: ImplementationSpecific
