@@ -141,8 +141,9 @@ if __name__ == "__main__":
         print(f"Deployments in context {context} starting with 'model-test\n': {deployments}")
         
         for one in exclude_lists:
-            print(f"Excluding deployment {one}")
-            deployments.remove(one)
+            if one in deployments:
+                print(f"Excluding deployment {d}")
+                deployments.remove(d)
 
         for d in deployments:
             for p in stats:
