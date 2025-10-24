@@ -142,8 +142,8 @@ if __name__ == "__main__":
         
         for one in exclude_lists:
             if one in deployments:
-                print(f"Excluding deployment {d}")
-                deployments.remove(d)
+                print(f"Excluding deployment {one}"}")
+                deployments.remove(one)
 
         for d in deployments:
             for p in stats:
