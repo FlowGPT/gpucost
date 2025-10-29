@@ -140,7 +140,7 @@ if __name__ == "__main__":
         print()
 
         deployments = get_deployments_starting_with("model-test", context)
-        print(f"Deployments in context {context} starting with 'model-test\n': {deployments}")
+        print(f"Deployments in context {context} starting with 'model-test':\n {deployments}")
         
         for one in exclude_lists:
             if one in deployments:
