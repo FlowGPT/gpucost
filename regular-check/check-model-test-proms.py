@@ -2,6 +2,7 @@ import requests
 from collections import defaultdict
 import subprocess
 import json
+from datetime import datetime
 
 cluster_metas=[
     {"context": "flow-do-nyc2", "vendor": "digitalocean"},
@@ -109,6 +110,7 @@ def scale_deployment(deployment_name: str, replicas: int, context: str) -> bool:
 
 if __name__ == "__main__":
     
+    print(f"Starting script at: {datetime.now()}")
     # Prometheus server address, modify according to your actual environment
     PROMETHEUS_URL = "http://172.31.255.83:9090/"
     # PromQL query to execute
@@ -146,12 +148,17 @@ if __name__ == "__main__":
                 deployments.remove(one)
 
         for d in deployments:
+            reclaim=True
+            match_pod=False
             for p in stats:
-                if stats[p]==0 and d in p:
-                    print(f"Warning: Deployment {d} don't have any requests in the last hour")
-                    succeed=scale_deployment(d, 0, context)
-                    if not succeed:
-                        raise ValueError(f"Failed to scale down deployment {d} in the cluster {context}")
-                    break
+                if d in p:
+                    match_pod=True
+                    if stats[p]!=0:
+                        reclaim=False
+            if match_pod and reclaim:
+                print(f"Warning: Deployment {d} don't have any requests in the last hour")
+                succeed=scale_deployment(d, 0, context)
+                if not succeed:
+                    raise ValueError(f"Failed to scale down deployment {d} in the cluster {context}")
 
         print("--------------------------------------------------")
