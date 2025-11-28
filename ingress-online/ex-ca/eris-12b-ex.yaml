@@ -1,6 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  annotations:
+    external-dns.alpha.kubernetes.io/target: k8s.exabits-ca.flow.chat
   labels:
     external-dns: enabled
   name: eris-violet-12b
