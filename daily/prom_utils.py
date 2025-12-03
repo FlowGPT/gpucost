@@ -21,7 +21,7 @@ def query_prometheus_with_custom_range(
     data=query_prometheus(proms_range_url, params)
     if data is None or len(data)==0:
         return []
-    return data[0]['values']
+    return data[0]['values'][:-1]
 
 
 def query_prometheus(prometheus_url, params, timeout=10):

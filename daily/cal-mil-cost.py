@@ -3,6 +3,16 @@ from dbutils import GPUHourCost
 from prom_utils import query_prometheus_with_custom_range
 from datetime import datetime, timedelta
 
+def cal_gpu_oneday_total_cost(hourly_cost, gpu_hour_nums_list):
+    total_cost = 0.0
+    for hour_data in gpu_hour_nums_list:
+        timestamp, gpu_hour_num_str = hour_data
+        gpu_hour_num = int(gpu_hour_num_str)
+        hour_cost = hourly_cost * gpu_hour_num
+        total_cost += hour_cost
+    return total_cost
+
+
 hourly_gpu_cost_ids2cluster={
     'eris-12b-ex': 'k8s/exabits-h100/dcgm-exporter',
     'eris-12b-ex-ca': 'k8s/exabits-ca/dcgm-exporter',
@@ -35,7 +45,8 @@ for record in matched_records:
         prom_cluster = hourly_gpu_cost_ids2cluster[id]
         gpu_hour_nums_list = query_prometheus_with_custom_range(yesterday,today,job=prom_cluster)
         print(f"GPU hour nums list for ID {id}: {gpu_hour_nums_list}")
-        
+        gpu_cost = cal_gpu_oneday_total_cost(gpuhourdata.price, gpu_hour_nums_list)
+        print(f"Calculated GPU cost for ID {id} using Prometheus data: {gpu_cost}")
     else:
         gpu_cost = gpuhourdata.price * gpuhourdata.card_num * 24
     input_mil_cost = gpu_cost / (record.input_tokens + 5 * record.output_tokens) * 1000000
