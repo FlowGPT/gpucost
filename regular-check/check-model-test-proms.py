@@ -313,5 +313,8 @@ if __name__ == "__main__":
         print("--------------------------------------------------")
 
         for d in old_deployments_without_replicas:
+            if d in exclude_lists:
+                print(f"Excluding deployment {d} from deletion")
+                continue
             print(f"Deleting old resources for deployment: {d}")
             delete_resources_by_name(d, context)
