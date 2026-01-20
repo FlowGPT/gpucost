@@ -48,7 +48,7 @@ def filter_deployments_by_age_and_replicas(deployment_names, context, days_thres
     Returns:
         List of deployment names that meet the criteria (older than threshold and no replicas)
     """
-    from datetime import datetime, timedelta
+    from datetime import datetime, timezone
     import subprocess
     import json
     
@@ -72,19 +72,26 @@ def filter_deployments_by_age_and_replicas(deployment_names, context, days_thres
                 raise ValueError(f"Could not get creation timestamp for deployment {dep_name}")
                 
             # Get ready replicas count
-            ready_replicas = deployment_data.get('status', {}).get('readyReplicas', None)
+            ready_replicas = deployment_data.get('status', {}).get('readyReplicas', 0)
             if ready_replicas is None:
                 raise ValueError(f"Could not get ready replicas count for deployment {dep_name}")
             
             # Convert timestamp to datetime object
             try:
+                # Handle the timezone-aware datetime from Kubernetes
                 creation_time = datetime.fromisoformat(creation_str.replace("Z", "+00:00"))
             except ValueError:
                 print(f"Invalid timestamp format for deployment {dep_name}: {creation_str}")
                 continue
                 
+            # Use timezone-aware current time for comparison
+            now_time = datetime.now(timezone.utc)
+            if creation_time.tzinfo is None:
+                # If creation_time is naive, make now_time naive too
+                now_time = datetime.now()
+            
             # Calculate time difference
-            time_diff = datetime.now() - creation_time
+            time_diff = now_time - creation_time
             days_old = time_diff.days
             
             # Check if older than threshold days and has no replicas
