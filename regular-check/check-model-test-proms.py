@@ -13,7 +13,7 @@ exclude_lists=["model-test-qwen3-embedding"]
 
 def get_deployments_starting_with(prefix, context):
     try:
-        # 命令：获取默认命名空间下的所有Deployments，输出为JSON
+        # Command: Get all Deployments in the default namespace, output as JSON
         cmd = ['kubectl', 'get', 'deployments', '-o', 'json', '--context', context]
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
         data = json.loads(result.stdout)
@@ -34,6 +34,72 @@ def get_deployments_starting_with(prefix, context):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         return []
+
+
+def filter_deployments_by_age_and_replicas(deployment_names, context, days_threshold=60):
+    """
+    Filter deployments by creation time and replica count
+    
+    Parameters:
+        deployment_names: List of deployment names
+        context: kubectl context
+        days_threshold: Days threshold, default is 60 days
+        
+    Returns:
+        List of deployment names that meet the criteria (older than threshold and no replicas)
+    """
+    from datetime import datetime, timedelta
+    import subprocess
+    import json
+    
+    filtered_deployments = []
+    
+    for dep_name in deployment_names:
+        try:
+            # Get detailed information for specific deployment
+            cmd = ['kubectl', 'get', 'deployment', dep_name, '-o', 'json', '--context', context]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode != 0:
+                print(f"Error getting deployment {dep_name}: {result.stderr}")
+                continue
+                
+            deployment_data = json.loads(result.stdout)
+            
+            # Get creation timestamp
+            creation_str = deployment_data.get('metadata', {}).get('creationTimestamp', '')
+            if not creation_str:
+                raise ValueError(f"Could not get creation timestamp for deployment {dep_name}")
+                
+            # Get ready replicas count
+            ready_replicas = deployment_data.get('status', {}).get('readyReplicas', None)
+            if ready_replicas is None:
+                raise ValueError(f"Could not get ready replicas count for deployment {dep_name}")
+            
+            # Convert timestamp to datetime object
+            try:
+                creation_time = datetime.fromisoformat(creation_str.replace("Z", "+00:00"))
+            except ValueError:
+                print(f"Invalid timestamp format for deployment {dep_name}: {creation_str}")
+                continue
+                
+            # Calculate time difference
+            time_diff = datetime.now() - creation_time
+            days_old = time_diff.days
+            
+            # Check if older than threshold days and has no replicas
+            if days_old > days_threshold and ready_replicas == 0:
+                filtered_deployments.append(dep_name)
+                
+        except json.JSONDecodeError as e:
+            print(f"Error parsing JSON output for deployment {dep_name}: {e}")
+        except ValueError as e:
+            print(f"Value error for deployment {dep_name}: {e}")
+        except Exception as e:
+            print(f"An unexpected error occurred while processing deployment {dep_name}: {e}")
+    
+    return filtered_deployments
+
 
 requests_query_tmpl='increase(vllm:e2e_request_latency_seconds_count{pod=~"model-test.*",vendor="$vendor"}[1h])'
 
@@ -83,7 +149,7 @@ def query_prometheus(prometheus_url, query, timeout=10):
     return None
 
 def before_second_last_hyphen(pod_name: str) -> str:
-    # 找到所有 '-' 的位置
+    # Find all '-' positions
     hyphen_indices = [i for i, ch in enumerate(pod_name) if ch == '-']
 
     if len(hyphen_indices) < 2:
@@ -91,7 +157,7 @@ def before_second_last_hyphen(pod_name: str) -> str:
 
     second_last_idx = hyphen_indices[-1]
 
-    # 返回该位置之前的子字符串（不包含 '-')
+    # Return the substring before that position (excluding '-')
     return pod_name[:second_last_idx]
 
 def scale_deployment(deployment_name: str, replicas: int, context: str) -> bool:
@@ -107,6 +173,78 @@ def scale_deployment(deployment_name: str, replicas: int, context: str) -> bool:
         return False
     print(f"Scaled deployment '{deployment_name}' to {replicas} replicas.")
     return True
+
+def filter_old_deployments_without_replicas(deployments):
+    """
+    Filter out deployments that are older than 60 days and have no replicas
+    
+    Parameters:
+        deployments: List of dictionaries containing deployment details
+        
+    Returns:
+        List of deployment names that meet the criteria
+    """
+    from datetime import datetime, timedelta
+    
+    filtered_deployments = []
+    
+    for deployment in deployments:
+        creation_str = deployment['creation_timestamp']
+        
+        # Convert string to datetime object
+        try:
+            creation_time = datetime.fromisoformat(creation_str.replace("Z", "+00:00"))
+        except ValueError:
+            print(f"Invalid timestamp format for deployment {deployment['name']}: {creation_str}")
+            continue
+            
+        # Calculate time difference
+        time_diff = datetime.now() - creation_time
+        days_old = time_diff.days
+        
+        # Check if older than 60 days and has no replicas
+        if days_old > 60 and deployment['ready_replicas'] == 0:
+            filtered_deployments.append(deployment['name'])
+            
+    return filtered_deployments
+
+def delete_resources_by_name(resource_name, context):
+    """
+    Delete Deployment, Service, and Ingress resources with the given name in the specified context.
+    
+    Args:
+        resource_name (str): Name of the resources to delete (all three resource types use the same name)
+        context (str): Kubernetes context to operate in
+        
+    Returns:
+        dict: Status of deletion for each resource type
+    """
+    import subprocess
+    
+    deletion_status = {
+        'deployment': False,
+        'service': False,
+        'ingress': False
+    }
+    
+    # Define resource types to delete
+    resource_types = ['deployment', 'service', 'ingress']
+    
+    for resource_type in resource_types:
+        try:
+            # Execute kubectl delete command for each resource type
+            cmd = ['kubectl', 'delete', resource_type, resource_name, '--context', context, '--ignore-not-found=true']
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                print(f"Successfully deleted {resource_type} '{resource_name}' in context '{context}'")
+                deletion_status[resource_type] = True
+            else:
+                print(f"Error deleting {resource_type} '{resource_name}': {result.stderr}")
+        except Exception as e:
+            print(f"Exception occurred while deleting {resource_type} '{resource_name}': {str(e)}")
+    
+    return deletion_status
 
 if __name__ == "__main__":
     
@@ -142,6 +280,10 @@ if __name__ == "__main__":
         deployments = get_deployments_starting_with("model-test", context)
         print(f"Deployments in context {context} starting with 'model-test':\n {deployments}")
         
+        # Filter deployments using the new function
+        old_deployments_without_replicas = filter_deployments_by_age_and_replicas(deployments, context)
+        print(f"Deployments older than 60 days with no replicas in {context}: {old_deployments_without_replicas}")
+        
         for one in exclude_lists:
             if one in deployments:
                 print(f"Excluding deployment {one}")
@@ -162,3 +304,7 @@ if __name__ == "__main__":
                     raise ValueError(f"Failed to scale down deployment {d} in the cluster {context}")
 
         print("--------------------------------------------------")
+
+        for d in old_deployments_without_replicas:
+            print(f"Deleting old resources for deployment: {d}")
+            delete_resources_by_name(d, context)
