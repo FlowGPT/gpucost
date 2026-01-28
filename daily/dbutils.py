@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 MYSQL_CONFIG = {
-    'host': '3.135.224.186',    
+    'host': '18.189.20.30',    
     'user': 'flowgptwq',       
     'password': 'K7lfhE1qask1', 
     'database': 'flow_report_app',    
