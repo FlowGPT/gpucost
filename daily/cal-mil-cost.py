@@ -14,8 +14,8 @@ def cal_gpu_oneday_total_cost(hourly_cost, gpu_hour_nums_list):
 
 
 hourly_gpu_cost_ids2cluster={
-    'eris-12b-ex': 'k8s/exabits-h100/dcgm-exporter',
-    'eris-12b-ex-ca': 'k8s/exabits-ca/dcgm-exporter',
+    'kaon-v1-12b-ex': 'k8s/exabits-h100/dcgm-exporter',
+    'kaon-v1-12b-exca': 'k8s/exabits-ca/dcgm-exporter',
 }
 
 yesterday = datetime.now() - timedelta(days=1)

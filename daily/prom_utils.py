@@ -5,7 +5,7 @@ def query_prometheus_with_custom_range(
     start_day_str, 
     end_day_str, 
     job="k8s/exabits-h100/dcgm-exporter",
-    pod_regex="eris-violet-12b-ex-.*",
+    pod_regex="kaon-v1-12b.*",
     step_hours="1h",
 ):
     
